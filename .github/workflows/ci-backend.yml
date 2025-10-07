@@ -80,7 +80,7 @@ jobs:
           port:     ${{ secrets.SSH_PORT || '22' }}
           source:   "deploy.sh"
           target:   "${{ env.REMOTE_DIR }}/${{ env.PROJECT_SUBDIR }}" # note!
-          strip_components: 1
+          # strip_components: 1
           overwrite: true
           debug: true
 
