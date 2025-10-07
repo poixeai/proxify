@@ -1,6 +1,7 @@
 {
   "routes": [
     { "path": "/openai", "target": "https://api.openai.com" },
-    { "path": "/anthropic", "target": "https://api.anthropic.com" }
+    { "path": "/anthropic", "target": "https://api.anthropic.com" },
+    { "path": "/giao", "target": "https://api.openai.com" }
   ]
 }

@@ -1,0 +1,123 @@
+name: CI-Frontend
+
+on:
+  workflow_dispatch:         
+  push:
+    tags:
+      - 'v*'                
+
+env:                         
+  APP_NAME: proxify_web          
+  REMOTE_DIR: /www/wwwroot/proxity.poixe.com/ci   
+  PROJECT_SUBDIR: frontend                  
+  NEED_ENV_FILE: true                  
+
+jobs:
+# ---------------------------------------------------------------- Build & Release
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ github.ref_name }}   
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure run is based on tag
+        run: |
+          echo "GITHUB_REF=$GITHUB_REF"
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            echo "[ERROR] This workflow must be triggered from a Git tag (refs/tags/v*)"
+            exit 1
+          fi
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch .env via SSH (if needed)
+        if: env.NEED_ENV_FILE == 'true'  
+        run: |
+          echo "[INFO] Setting up SSH private key..."
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          echo "[INFO] Disabling strict host checking..."
+          echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+          echo "[INFO] Fetching .env from remote..."
+          mkdir -p "${{ env.PROJECT_SUBDIR }}"
+          ssh -i ~/.ssh/id_rsa -p "${{ secrets.SSH_PORT || '22' }}" \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cat '${{ env.REMOTE_DIR }}/${{ env.PROJECT_SUBDIR }}/.env'" \
+            > "${{ env.PROJECT_SUBDIR }}/.env"
+
+      - name: Validate .env content
+        if: env.NEED_ENV_FILE == 'true'
+        run: |
+          if [ ! -s "${{ env.PROJECT_SUBDIR }}/.env" ]; then
+            echo "[ERROR] .env file is missing or empty."
+            exit 1
+          fi
+          echo "[INFO] .env file successfully saved to '${{ env.PROJECT_SUBDIR }}/.env'"
+
+      - name: Build and Zip React App
+        run: |
+          cd "${{ env.PROJECT_SUBDIR }}"
+          npm install
+          NODE_OPTIONS="--max-old-space-size=4096" npm run build --verbose
+          cd dist
+          zip -r "${{ github.workspace }}/${{ env.APP_NAME }}.zip" .
+
+      - name: Show output files
+        run: ls -alh "${{ github.workspace }}"
+
+      - name: Create Release & upload dist zip
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: "${{ env.APP_NAME }}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+# ---------------------------------------------------------------- Deploy
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: success()                     
+    concurrency: production            
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ${{ env.PROJECT_SUBDIR }}/deploy.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Upload deploy.sh
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          port:     ${{ secrets.SSH_PORT || '22' }}
+          source:   "${{ env.PROJECT_SUBDIR }}/deploy.sh"
+          target:   "${{ env.REMOTE_DIR }}/${{ env.PROJECT_SUBDIR }}"
+          strip_components: 1
+
+      - name: Run deploy script
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          port:     ${{ secrets.SSH_PORT || '22' }}
+          envs:     APP_NAME,REMOTE_DIR,PROJECT_SUBDIR
+          script: |
+            cd "${REMOTE_DIR}/${PROJECT_SUBDIR}"
+            chmod +x deploy.sh
+            VERSION="${{ needs.build.outputs.tag }}"   
+            ./deploy.sh "$APP_NAME" "$VERSION"
