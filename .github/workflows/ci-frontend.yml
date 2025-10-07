@@ -9,7 +9,7 @@ on:
 env:                         
   APP_NAME: proxify_web          
   REMOTE_DIR: /www/wwwroot/proxify.poixe.com/ci   
-  PROJECT_SUBDIR: frontend                  
+  PROJECT_SUBDIR: web                  
   NEED_ENV_FILE: true                  
 
 jobs:
