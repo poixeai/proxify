@@ -8,7 +8,7 @@ on:
 
 env:                         
   APP_NAME: proxify_web          
-  REMOTE_DIR: /www/wwwroot/proxity.poixe.com/ci   
+  REMOTE_DIR: /www/wwwroot/proxify.poixe.com/ci   
   PROJECT_SUBDIR: frontend                  
   NEED_ENV_FILE: true                  
 
