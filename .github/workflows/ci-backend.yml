@@ -38,7 +38,6 @@ jobs:
         run: |
           cd .
           go build -o "$APP_NAME" main.go
-          cd ..
 
       - name: Create Release & upload binary
         uses: softprops/action-gh-release@v2
@@ -70,7 +69,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key:      ${{ secrets.SSH_PRIVATE_KEY }}
           port:     ${{ secrets.SSH_PORT || '22' }}
-          source:   "./deploy.sh"
+          source:   "deploy.sh"
           target:   "${{ env.REMOTE_DIR }}/${{ env.PROJECT_SUBDIR }}" # note!
           strip_components: 1
 
