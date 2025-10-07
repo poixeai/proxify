@@ -62,6 +62,15 @@ jobs:
             deploy.sh
           sparse-checkout-cone-mode: false
 
+      - name: Verify deploy.sh exists
+        run: |
+          echo "[INFO] Files in workspace:"
+          ls -lah
+          if [ ! -f "deploy.sh" ]; then
+            echo "[ERROR] deploy.sh not found!"
+            exit 1
+          fi
+
       - name: Upload deploy.sh
         uses: appleboy/scp-action@v1.0.0
         with:
@@ -72,6 +81,8 @@ jobs:
           source:   "deploy.sh"
           target:   "${{ env.REMOTE_DIR }}/${{ env.PROJECT_SUBDIR }}" # note!
           strip_components: 1
+          overwrite: true
+          debug: true
 
       - name: Run deploy script
         uses: appleboy/ssh-action@v1.2.2
@@ -83,6 +94,9 @@ jobs:
           envs:     APP_NAME,REMOTE_DIR,PROJECT_SUBDIR
           script: |
             cd "${REMOTE_DIR}/${PROJECT_SUBDIR}"
+            echo "[INFO] Current dir: $(pwd)"
+            echo "[INFO] Files here:"
+            ls -lah
             chmod +x deploy.sh
             VERSION="${{ needs.build.outputs.tag }}"    
             ./deploy.sh "$APP_NAME" "$VERSION"
