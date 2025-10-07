@@ -9,7 +9,11 @@ CURRENT_DIR="${SCRIPT_DIR}/current"
 # === custom config ===
 REPO="poixeai/proxify" 
 if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+  # Use a more robust method to load environment variables
+  # This correctly handles spaces in values and other special characters.
+  set -o allexport
+  source .env
+  set +o allexport
 fi
 GITHUB_TOKEN="${GITHUB_TOKEN:?Environment variable GITHUB_TOKEN not set}"
 NEED_ENV_FILE=true
