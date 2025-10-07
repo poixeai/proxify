@@ -4,12 +4,3 @@
 # log files
 *.log
 /log/
-
-# Go specific
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
