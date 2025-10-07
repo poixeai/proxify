@@ -1,0 +1,89 @@
+name: CI-Backend
+
+on:
+  workflow_dispatch:        
+  push:
+    tags:
+      - 'v*'                  
+
+env:                       
+  APP_NAME: proxify        
+  REMOTE_DIR: /www/wwwroot/proxify.poixe.com/ci  
+  PROJECT_SUBDIR: backend            
+
+jobs:
+# ---------------------------------------------------------------- Build & Release
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ github.ref_name }}    
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure run is based on tag
+        run: |
+          echo "GITHUB_REF=$GITHUB_REF"
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            echo "[ERROR] This workflow must be triggered from a Git tag (refs/tags/v*)"
+            exit 1
+          fi
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build binary
+        run: |
+          cd .
+          go build -o "$APP_NAME" main.go
+          cd ..
+
+      - name: Create Release & upload binary
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: ./${{ env.APP_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+# ---------------------------------------------------------------- Deploy
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: success()                     
+    concurrency: production            
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ./deploy.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Upload deploy.sh
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          port:     ${{ secrets.SSH_PORT || '22' }}
+          source:   "./deploy.sh"
+          target:   "${{ env.REMOTE_DIR }}/${{ env.PROJECT_SUBDIR }}" # note!
+          strip_components: 1
+
+      - name: Run deploy script
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          port:     ${{ secrets.SSH_PORT || '22' }}
+          envs:     APP_NAME,REMOTE_DIR,PROJECT_SUBDIR
+          script: |
+            cd "${REMOTE_DIR}/${PROJECT_SUBDIR}"
+            chmod +x deploy.sh
+            VERSION="${{ needs.build.outputs.tag }}"    
+            ./deploy.sh "$APP_NAME" "$VERSION"
