@@ -19,6 +19,12 @@ func Extractor() gin.HandlerFunc {
 		c.Set(ctx.TopRoute, top)
 		c.Set(ctx.SubPath, sub)
 
+		// home
+		if c.Request.URL.Path == "/" {
+			c.Next()
+			return
+		}
+
 		// system whitelist → allow directly
 		if config.ReservedTopRoutes[top] {
 			c.Next()

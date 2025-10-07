@@ -13,9 +13,12 @@ func SetRoutes(r *gin.Engine) {
 	r.Use(middleware.Extractor())
 
 	// ==== reserved routes ====
+	r.GET("/", controller.HomeHandler)
+
 	apiGroup := r.Group("/api")
 	{
 		apiGroup.GET("/", controller.ShowPathHandler)
+		apiGroup.GET("routes", controller.RoutesHandler)
 	}
 
 	// ==== routes.json ====
