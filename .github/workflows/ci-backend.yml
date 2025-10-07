@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            ./deploy.sh
+            deploy.sh
           sparse-checkout-cone-mode: false
 
       - name: Upload deploy.sh
