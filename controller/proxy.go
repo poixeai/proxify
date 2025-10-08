@@ -10,6 +10,7 @@ import (
 	"github.com/poixeai/proxify/infra/ctx"
 	"github.com/poixeai/proxify/infra/logger"
 	"github.com/poixeai/proxify/infra/response"
+	"github.com/poixeai/proxify/util"
 )
 
 func ProxyHandler(c *gin.Context) {
@@ -24,7 +25,8 @@ func ProxyHandler(c *gin.Context) {
 	// build target URL
 	targetEndpoint := c.GetString(ctx.TargetEndpoint)
 	subPath := c.GetString(ctx.SubPath)
-	targetURL := targetEndpoint + subPath
+	targetURL := util.JoinURL(targetEndpoint, subPath)
+	c.Set(ctx.TargetURL, targetURL)
 
 	// construct new request
 	ctx := c.Request.Context()

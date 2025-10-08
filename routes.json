@@ -1,6 +1,7 @@
 {
   "routes": [
-    { "path": "/openai", "target": "https://api.openai.com" },
-    { "path": "/anthropic", "target": "https://api.anthropic.com" }
+    { "path": "/openai", "target": "https://api.openai.com/" },
+    { "path": "/anthropic", "target": "https://api.anthropic.com" },
+    { "path": "/azure", "target": "https://cnbv-azopenai2.openai.azure.com" }
   ]
 }

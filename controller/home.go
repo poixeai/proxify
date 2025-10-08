@@ -38,3 +38,11 @@ func NotFoundHandler(c *gin.Context) {
 func PanicHandler(c *gin.Context) {
 	panic("Intentional panic for testing")
 }
+
+// param
+func ShowParamHandler(c *gin.Context) {
+	param := c.Query("key")
+	c.JSON(http.StatusOK, gin.H{
+		"param": param,
+	})
+}

@@ -19,7 +19,8 @@ func SetRoutes(r *gin.Engine) {
 	apiGroup := r.Group("/api")
 	{
 		apiGroup.GET("/", controller.ShowPathHandler)
-		apiGroup.GET("routes", controller.RoutesHandler)
+		apiGroup.GET("/routes", controller.RoutesHandler)
+		apiGroup.GET("/param", controller.ShowParamHandler)
 	}
 
 	// ==== routes.json ====

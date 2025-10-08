@@ -12,3 +12,10 @@ func ExtractRoute(path string) (string, string) {
 	}
 	return top, ""
 }
+
+// JoinURL joins base and sub path, ensuring there is only one "/" between them
+func JoinURL(base, sub string) string {
+	base = strings.TrimRight(base, "/")
+	sub = strings.TrimLeft(sub, "/")
+	return base + "/" + sub
+}

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/poixeai/proxify/infra/config"
 	"github.com/poixeai/proxify/infra/ctx"
 	"github.com/poixeai/proxify/infra/logger"
 	"github.com/poixeai/proxify/util"
@@ -20,9 +21,14 @@ func GinRequestLogger() gin.HandlerFunc {
 		latency := time.Since(start)
 		status := c.Writer.Status()
 		method := c.Request.Method
-		path := c.Request.URL.Path
+		path := c.GetString(ctx.SubPath)
 		clientIP := c.ClientIP()
-		targetURL := c.GetString(ctx.TargetEndpoint) + c.GetString(ctx.SubPath)
+		targetURL := c.GetString(ctx.TargetURL)
+
+		topRoute := c.GetString(ctx.TopRoute)
+		if config.ReservedTopRoutes[topRoute] {
+			targetURL = "-"
+		}
 
 		logger.Infof(
 			"%s | %d | %s | %s -> %s | %v | %s",

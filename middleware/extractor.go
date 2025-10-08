@@ -13,7 +13,15 @@ import (
 func Extractor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		top, sub := util.ExtractRoute(c.Request.URL.Path)
-		// logger.Debugf("Extracted top route: %s, sub path: %s", top, sub)
+		query := c.Request.URL.RawQuery
+
+		if query != "" {
+			if sub == "" {
+				sub = "?" + query
+			} else {
+				sub = sub + "?" + query
+			}
+		}
 
 		// store top and sub path into context for later use
 		c.Set(ctx.TopRoute, top)
