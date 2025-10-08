@@ -9,6 +9,7 @@ import (
 func SetRoutes(r *gin.Engine) {
 	// basic middleware
 	r.Use(middleware.Recover())
+	r.Use(middleware.CORS())
 	r.Use(middleware.GinRequestLogger())
 	r.Use(middleware.Extractor())
 
